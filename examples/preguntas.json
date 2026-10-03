@@ -1,0 +1,28 @@
+{
+  "says_greeting": {
+    "type": "noul",
+    "instructions": "¿El texto del estado contiene un saludo?"
+  },
+  "is_question": {
+    "type": "noul",
+    "instructions": "¿El texto del estado termina en una pregunta?",
+    "criteria": {
+      "true": "El texto del estado termina en una pregunta.",
+      "false": "El texto del estado no termina en una pregunta."
+    }
+  },
+  "tone": {
+    "type": "choice",
+    "instructions": "¿Cuál es el tono del texto del estado?",
+    "criteria": {
+      "greeting": "El texto es un saludo.",
+      "farewell": "El texto es una despedida.",
+      "other": "El texto no es ni un saludo ni una despedida."
+    }
+  },
+  "politeness": {
+    "type": "score",
+    "instructions": "¿Qué tan educado es el texto del estado?",
+    "criteria": ["descortés", "educado", "muy educado"]
+  }
+}

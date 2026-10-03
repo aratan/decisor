@@ -1,0 +1,21 @@
+# Binario compilado
+/decisor
+/decisor.exe
+
+# Binarios genéricos por si se compila con otro nombre
+*.exe
+*.test
+
+# Salidas de la CLI
+*.json.out
+
+# Go
+/vendor/
+*.out
+coverage.*
+
+# Editores y SO
+.DS_Store
+.idea/
+.vscode/
+*.swp
