@@ -183,8 +183,13 @@ como clasificador de titulares, no como ayuda a decidir una operación.
 Para comprobar que los ejemplos siguen siendo válidos:
 
 ```bash
-python3 scripts/validar_ejemplos.py
+go test .
 ```
+
+Ese test recorre `examples/` y valida cada fichero con `ParseQuestions`, que es
+el mismo validador que usa la CLI. También busca caracteres de alfabetos que no
+deberían aparecer en un ejemplo en español, que es la señal de que el texto se
+corrompió al escribirlo.
 
 ## Referencia de la CLI
 

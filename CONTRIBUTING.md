@@ -33,6 +33,10 @@ go test -race ./...
 Las tres coinciden con lo que ejecuta la integración continua, así que fallan
 antes de llegar a GitHub.
 
+`go test` incluye además un test que recorre `examples/` y valida cada fichero
+con `ParseQuestions`. Si tocas un ejemplo, ese test te avisa; no hace falta
+ninguna herramienta aparte.
+
 ## Cómo escribir código
 
 - **Sin dependencias.** El paquete `ollama/` usa solo la biblioteca estándar.

@@ -33,10 +33,8 @@ jobs:
       - name: go vet
         run: go vet ./...
 
-      # Los JSON de examples/ se escriben a mano, y es facil que un ejemplo se
-      # quede mal formado o traga un caracter corrupto sin que se note.
-      - name: Validar ejemplos
-        run: python3 scripts/validar_ejemplos.py
+      # La validacion de examples/ va dentro de go test, asi que este paso ya
+      # la cubre.
 
       # Los tests de integración se saltan solos sin SYSTEMONE_E2E, así que
       # aquí no hace falta ningún servidor de Ollama.
