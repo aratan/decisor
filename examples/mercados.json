@@ -1,33 +1,48 @@
 {
-  "tono_del_titular": {
+  "tipo_de_activo": {
     "type": "choice",
-    "instructions": "¿El titular sugiere que la situación de la empresa mejorará, empeorará o no cambia?",
+    "instructions": "El estado es el array que devuelve la API de CoinGecko (https://api.coingecko.com/api/v3/coins/markets): un objeto por criptomoneda con campos como id, symbol, name, current_price, market_cap, market_cap_rank, total_volume, circulating_supply, ath y ath_change_percentage. Considera la entrada con market_cap_rank igual a 1. Cambia ese número por el rango que te interese y el modelo clasificará esa otra entrada. ¿Qué clase de activo describe esa entrada?",
     "criteria": {
-      "mejora": "El titular anuncia resultados buenos, un acuerdo, una subida o una expansión.",
-      "empeora": "El titular anuncia pérdidas, un cierre, una bajada, un despido o un problema.",
-      "neutro": "El titular informa de un hecho sin cargar en ninguna dirección.",
-      "otro": "El titular no encaja en ninguna de las categorías anteriores."
+      "stablecoin": "Su precio se mantiene pegado a una moneda fiat y apenas se mueve: current_price cerca de 1 y un rango high_24h/low_24h muy estrecho.",
+      "red_principal": "Es la criptomoneda nativa de una cadena de bloques y se usa para pagar comisiones de esa red.",
+      "token_de_exchange": "El emisor es un intercambio o una casa de cambio y el token se usa para obtener comisiones o descuentos dentro de su plataforma.",
+      "meme": "Nace de una broma o una cultura de internet, sin una utilidad técnica declarada en sus datos.",
+      "infraestructura_o_defi": "Da servicios a otras blockchains o protocolos: oráculos, puentes, lending, exchanges descentralizados o capas de escalado.",
+      "materia_tokenizada": "Representa una materia prima o metal mismo, con precio cercano al del mercado correspondiente.",
+      "otro": "No encaja en ninguna de las categorías anteriores."
     }
   },
-  "menciona_dinero": {
+  "precio_pegado_a_fiat": {
     "type": "noul",
-    "instructions": "¿El titular menciona cifras, porcentajes o un impacto económico?",
+    "instructions": "El estado es un array de CoinGecko con datos numéricos de mercado. Considera la entrada con market_cap_rank igual a 3. ¿Los números de esa entrada describen un precio estable y pegado a una moneda fiat?",
     "criteria": {
-      "true": "El titular incluye una cifra, un porcentaje o una cantidad.",
-      "false": "El titular no incluye ninguna cifra."
+      "true": "current_price está cerca de 1, high_24h y low_24h casi coinciden y price_change_percentage_24h ronda cero.",
+      "false": "current_price está lejos de 1, o el rango de 24 horas es amplio, o price_change_percentage_24h mueve varios puntos."
     }
   },
-  "alcance": {
+  "emision_pendiente": {
+    "type": "noul",
+    "instructions": "El estado es un array de CoinGecko con datos numéricos de mercado. Considera la entrada con market_cap_rank igual a 23. ¿Queda emisión por delante, según circulating_supply, total_supply y max_supply?",
+    "criteria": {
+      "true": "max_supply es null o null en la versión JSON, o circulating_supply queda claramente por debajo de total_supply.",
+      "false": "circulating_supply coincide con total_supply y max_supply, o los tres valores están muy próximos."
+    }
+  },
+  "distancia_del_maximo": {
     "type": "score",
-    "instructions": "¿Qué tan amplio parece ser el efecto que describe el titular?",
+    "instructions": "El estado es un array de CoinGecko con datos numéricos de mercado. Considera la entrada con market_cap_rank igual a 12 y usa el campo ath_change_percentage, que es negativo cuando el precio está por debajo de su máximo histórico. ¿A qué distancia queda current_price de ese máximo?",
     "criteria": [
-      "Afecta solo a una operación puntual.",
-      "Afecta a una sección de la empresa.",
-      "Afecta a la empresa entera o al sector."
+      "ath_change_percentage cercano a cero: el precio está prácticamente en su máximo histórico.",
+      "ath_change_percentage de menos de un 50 por ciento en valor absoluto: el precio ha retrocedido, pero sigue cerca del máximo.",
+      "ath_change_percentage de un 50 por ciento o más en valor absoluto: el precio está muy lejos de su máximo histórico."
     ]
   },
-  "es_promocion": {
+  "volumen_sospechoso": {
     "type": "noul",
-    "instructions": "¿El titular parece material de promoción más que información periodística?"
+    "instructions": "El estado es un array de CoinGecko con datos numéricos de mercado. Considera la entrada con market_cap_rank igual a 51 y compara total_volume con market_cap. ¿Los datos de esa entrada parecen poco fiables?",
+    "criteria": {
+      "true": "total_volume es cero, o es una fracción minúscula de market_cap, o high_24h coincide con low_24h y price_change_24h es cero exacto.",
+      "false": "total_volume es una proporción apreciable de market_cap y el precio ha variado durante las últimas 24 horas."
+    }
   }
 }

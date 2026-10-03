@@ -25,7 +25,8 @@ import (
 // noEsPreguntas identifica ficheros que hay en examples/ pero que no son un
 // conjunto de preguntas.
 var noEsPreguntas = map[string]bool{
-	"estado.json": true,
+	"estado.json":  true,
+	"mercado.json": true,
 }
 
 // comprobarEjemplo devuelve los problemas de un fichero de preguntas. Separado

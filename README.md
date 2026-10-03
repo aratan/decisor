@@ -158,15 +158,14 @@ Con `-` el estado se lee de la entrada estándar, para encadenarlo con cualquier
 otra herramienta sin escribir un fichero temporal:
 
 ```bash
-curl -s https://titulares.com/rss \
-  | xmllint --xpath '//title/text()' - \
+curl -s 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=10' \
   | decisor preguntar --estado - --preguntas examples/mercados.json --json
 ```
 
 ### Ejemplos incluidos
 
-Cinco conjuntos de preguntas listos para usar, todos de clasificación de texto,
-que es lo que este tipo de modelo hace bien:
+Cinco conjuntos de preguntas listos para usar. Todos clasifican el estado que les
+pasas, que es lo que este tipo de modelo hace bien:
 
 | Fichero | Para qué |
 |---|---|
@@ -174,11 +173,46 @@ que es lo que este tipo de modelo hace bien:
 | [`examples/viajes.json`](examples/viajes.json) | Enrutar un mensaje de reserva: intención, urgencia, destino. |
 | [`examples/coches.json`](examples/coches.json) | Clasificar un anuncio de coche usado y sus señales de riesgo. |
 | [`examples/pisos.json`](examples/pisos.json) | Anuncio inmobiliario: venta o alquiler, distribución, precio. |
-| [`examples/mercados.json`](examples/mercados.json) | Sentimiento de un titular de noticias. |
+| [`examples/mercados.json`](examples/mercados.json) | Clasificar activos de la API de CoinGecko. |
 
-`examples/mercados.json` clasifica **texto**, no calcula nada: el modelo no
-calcula un RSI ni una media móvil, elige entre las etiquetas que le das. Úsalo
-como clasificador de titulares, no como ayuda a decidir una operación.
+Y dos estados de ejemplo para probar sin escribir JSON a mano:
+
+| Fichero | Para qué |
+|---|---|
+| [`examples/estado.json`](examples/estado.json) | Un mensaje de soporte con autor, texto y canal. |
+| [`examples/mercado.json`](examples/mercado.json) | Seis filas de `coins/markets` de CoinGecko, recortadas a los campos que el ejemplo usa. |
+
+`examples/mercados.json` funciona sobre el array que devuelve
+`https://api.coingecko.com/api/v3/coins/markets`: cada pregunta dice qué entrada
+mirar, señalando su `market_cap_rank`. Cambia ese número para apuntar a otra
+criptomoneda del array.
+
+```bash
+decisor preguntar \
+  --estado-archivo examples/mercado.json \
+  --preguntas examples/mercados.json \
+  --json
+```
+
+El endpoint mete el estado entero en el prompt de cada pregunta y el límite es de
+8194 tokens, así que **el array completo no cabe**. Con filas tal cual las
+devuelve CoinGecko, unos 826 bytes por fila, el máximo real medido es de 17 filas;
+a partir de 18 el servidor responde 400. Si el `curl` pide las 100 de la API,
+recorta el `per_page` o quita los campos que no uses:
+
+```bash
+curl -s 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=100' \
+  | jq '[.[] | {id, symbol, name, current_price, market_cap, market_cap_rank,
+               total_volume, high_24h, low_24h, price_change_percentage_24h,
+               circulating_supply, total_supply, max_supply,
+               ath, ath_change_percentage, last_updated}]' \
+  | decisor preguntar --estado - --preguntas examples/mercados.json --json
+```
+
+Este ejemplo clasifica, no calcula: el modelo no multiplica ni divide, elige
+entre las etiquetas que le das. None de sus preguntas recomienda comprar ni
+vender; describen qué clase de activo es, si su emisión está abierta, a qué
+distancia está de su máximo y si los datos de esa fila son suspiciously planos.
 
 Para comprobar que los ejemplos siguen siendo válidos:
 
