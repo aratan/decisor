@@ -154,6 +154,38 @@ decisor preguntar \
   --preguntas '{"saludo": {"type": "noul", "instructions": "¿El texto contiene un saludo?"}}'
 ```
 
+Con `-` el estado se lee de la entrada estándar, para encadenarlo con cualquier
+otra herramienta sin escribir un fichero temporal:
+
+```bash
+curl -s https://titulares.com/rss \
+  | xmllint --xpath '//title/text()' - \
+  | decisor preguntar --estado - --preguntas examples/mercados.json --json
+```
+
+### Ejemplos incluidos
+
+Cinco conjuntos de preguntas listos para usar, todos de clasificación de texto,
+que es lo que este tipo de modelo hace bien:
+
+| Fichero | Para qué |
+|---|---|
+| [`examples/preguntas.json`](examples/preguntas.json) | Saludo, pregunta, tono y cortesía. El punto de partida. |
+| [`examples/viajes.json`](examples/viajes.json) | Enrutar un mensaje de reserva: intención, urgencia, destino. |
+| [`examples/coches.json`](examples/coches.json) | Clasificar un anuncio de coche usado y sus señales de riesgo. |
+| [`examples/pisos.json`](examples/pisos.json) | Anuncio inmobiliario: venta o alquiler, distribución, precio. |
+| [`examples/mercados.json`](examples/mercados.json) | Sentimiento de un titular de noticias. |
+
+`examples/mercados.json` clasifica **texto**, no calcula nada: el modelo no
+calcula un RSI ni una media móvil, elige entre las etiquetas que le das. Úsalo
+como clasificador de titulares, no como ayuda a decidir una operación.
+
+Para comprobar que los ejemplos siguen siendo válidos:
+
+```bash
+python3 scripts/validar_ejemplos.py
+```
+
 ## Referencia de la CLI
 
 ```
@@ -170,7 +202,7 @@ decisor preguntar --estado "texto" --preguntas preguntas.json
 
 | Flag | Por defecto | Qué hace |
 |---|---|---|
-| `--estado` | — | Texto a evaluar. |
+| `--estado` | — | Texto a evaluar. `-` lo lee de la entrada estándar. |
 | `--estado-archivo` | — | Documento JSON a evaluar como estado estructurado. |
 | `--preguntas` | — | Fichero JSON con las preguntas (obligatorio). |
 | `--model` | `nimble` | Modelo a usar. |
@@ -312,17 +344,38 @@ for _, named := range resp.AnswersInOrder() {
 log.Println("tardó", resp.Duration)
 ```
 
-Para cargar preguntas desde configuración, `ParseQuestion` valida un
-`json.RawMessage` con el mismo formato que la API:
+Para cargar preguntas desde configuración o un fichero, `ParseQuestions` valida
+el conjunto entero y nombra en el error la pregunta que falla:
 
 ```go
-questions := make(map[string]ollama.Question)
-for name, raw := range fromConfig {
-    q, err := ollama.ParseQuestion(raw)
-    if err != nil {
-        return fmt.Errorf("pregunta %q: %w", name, err)
-    }
-    questions[name] = q
+// Desde un []byte o un io.Reader, con el mismo formato del campo "questions".
+questions, err := ollama.LoadQuestions(file)
+if err != nil {
+    return err // p. ej. question "tono": 1 opciones, el servidor admite de 2 a 26
+}
+
+resp, err := client.Decide(ctx, ollama.DecideRequest{
+    Model:     "nimble",
+    State:     ollama.StringState("Hola, ¿cómo estás?"),
+    Questions: questions,
+})
+```
+
+Para el caso más común, un sí o un no, hay una llamada que evita montar el mapa
+a mano:
+
+```go
+saludo, err := ollama.NewNoulQuestion("¿Contiene un saludo?", ollama.NoulCriteria{})
+if err != nil {
+    return err
+}
+
+answer, err := client.DecideYesNo(ctx, "nimble", ollama.StringState("Hola, soy Ana"), saludo)
+if err != nil {
+    return err
+}
+if noul, ok := answer.AsNoul(); ok && noul.Verdict(0.5) {
+    fmt.Println("es un saludo")
 }
 ```
 

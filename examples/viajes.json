@@ -1,0 +1,33 @@
+{
+  "intencion": {
+    "type": "choice",
+    "instructions": "¿Qué quiere hacer la persona con este mensaje?",
+    "criteria": {
+      "reservar": "Quiere reservar o comprar algo.",
+      "cancelar": "Quiere anular o cambiar una reserva existente.",
+      "consultar": "Solo pregunta información, sin intención de reservar ni cancelar.",
+      "otro": "No encaja en ninguna de las anteriores."
+    }
+  },
+  "es_urgente": {
+    "type": "noul",
+    "instructions": "¿El mensaje indica urgencia?",
+    "criteria": {
+      "true": "El mensaje dice que necesita algo con urgencia o para hoy.",
+      "false": "El mensaje no menciona urgencia ni plazos cortos."
+    }
+  },
+  "destino": {
+    "type": "score",
+    "instructions": "¿Qué tan claro está el destino que menciona el mensaje?",
+    "criteria": [
+      "No menciona ningún destino.",
+      "Menciona un destino general, como \"el norte\".",
+      "Menciona una ciudad o país concreto."
+    ]
+  },
+  "menciona_presupuesto": {
+    "type": "noul",
+    "instructions": "¿El mensaje menciona un precio, un presupuesto o una fecha concreta?"
+  }
+}

@@ -15,6 +15,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"os/signal"
@@ -136,7 +137,7 @@ func runDecide(ctx context.Context, args []string) error {
 	fs := newFlagSet("preguntar")
 	url := fs.String("url", ollama.DefaultBaseURL, "dirección del servidor")
 	model := fs.String("model", defaultModel, "modelo a usar")
-	state := fs.String("estado", "", "texto a evaluar")
+	state := fs.String("estado", "", `texto a evaluar; "-" lo lee de la entrada estándar`)
 	stateFile := fs.String("estado-archivo", "", "archivo JSON a evaluar como estado estructurado")
 	questionsPath := fs.String("preguntas", "", "archivo JSON con las preguntas")
 	threshold := fs.Float64("umbral", 0.5, "probabilidad mínima para responder 'sí'")
@@ -152,6 +153,9 @@ func runDecide(ctx context.Context, args []string) error {
 
 	if strings.TrimSpace(*state) == "" && strings.TrimSpace(*stateFile) == "" {
 		return errors.New("falta --estado o --estado-archivo")
+	}
+	if *state == "-" && strings.TrimSpace(*stateFile) != "" {
+		return errors.New("--estado - no se puede combinar con --estado-archivo")
 	}
 	if strings.TrimSpace(*questionsPath) == "" {
 		return errors.New("falta --preguntas")
@@ -299,9 +303,24 @@ func describeDecideError(err error) error {
 	}
 }
 
-// buildState resuelve el estado a evaluar: texto plano de --estado, o el
-// documento JSON de --estado-archivo. Devuelve también un resumen para imprimir.
+// buildState resuelve el estado a evaluar: texto plano de --estado, un documento
+// JSON de --estado-archivo, o la entrada estándar si --estado es "-". Devuelve
+// también un resumen para imprimir.
 func buildState(text, path string) (ollama.State, string, error) {
+	// "-" como estado lee de stdin, para encadenar con otra herramienta sin
+	// escribir un fichero temporal.
+	if text == "-" {
+		raw, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			return nil, "", fmt.Errorf("no se pudo leer de la entrada estándar: %w", err)
+		}
+		state := string(raw)
+		if strings.TrimSpace(state) == "" {
+			return nil, "", errors.New("la entrada estándar estaba vacía")
+		}
+		return ollama.StringState(state), truncate(state, 160), nil
+	}
+
 	if strings.TrimSpace(text) == "" {
 		raw, err := os.ReadFile(path)
 		if err != nil {
@@ -315,31 +334,19 @@ func buildState(text, path string) (ollama.State, string, error) {
 	return ollama.StringState(text), text, nil
 }
 
-// loadQuestions reads the questions file, whose contents are the value of the
-// API's "questions" field. Names are validated with the same rules the library
-// applies in Go.
+// loadQuestions lee el fichero de preguntas. La validación vive en la
+// biblioteca, así que la CLI y quien use el paquete de Go se benefician de los
+// mismos errores.
 func loadQuestions(path string) (map[string]ollama.Question, error) {
-	raw, err := os.ReadFile(path)
+	file, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("no se pudo leer %s: %w", path, err)
 	}
+	defer file.Close()
 
-	var rawQuestions map[string]json.RawMessage
-	if err := json.Unmarshal(raw, &rawQuestions); err != nil {
-		return nil, fmt.Errorf("%s no contiene un objeto de preguntas: %w", path, err)
-	}
-	if len(rawQuestions) < ollama.MinQuestions || len(rawQuestions) > ollama.MaxQuestions {
-		return nil, fmt.Errorf("%s define %d preguntas; se admiten entre %d y %d",
-			path, len(rawQuestions), ollama.MinQuestions, ollama.MaxQuestions)
-	}
-
-	questions := make(map[string]ollama.Question, len(rawQuestions))
-	for name, rawQuestion := range rawQuestions {
-		question, err := ollama.ParseQuestion(rawQuestion)
-		if err != nil {
-			return nil, fmt.Errorf("pregunta %q: %w", name, err)
-		}
-		questions[name] = question
+	questions, err := ollama.LoadQuestions(file)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", path, err)
 	}
 	return questions, nil
 }

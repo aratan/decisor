@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"sort"
 	"strconv"
 	"strings"
@@ -195,6 +196,79 @@ func ParseQuestion(raw json.RawMessage) (Question, error) {
 		return Question{}, fmt.Errorf("%w: unknown question type %q, want %s, %s or %s",
 			ErrInvalidRequest, probe.Type, QuestionNoul, QuestionChoice, QuestionScore)
 	}
+}
+
+// ParseQuestions validates a whole set of questions at once, given the value of
+// the API's "questions" field. Every question is checked with ParseQuestion and
+// the set must hold between MinQuestions and MaxQuestions entries.
+//
+// It exists so that a caller loading questions from a file or configuration does
+// not have to reimplement the decoding and the per-question error handling that
+// the CLI needs anyway.
+//
+//	{"saludo": {"type": "noul", "instructions": "..."}}
+func ParseQuestions(raw []byte) (map[string]Question, error) {
+	var rawQuestions map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &rawQuestions); err != nil {
+		return nil, fmt.Errorf("%w: questions must be a JSON object keyed by question name: %w", ErrInvalidRequest, err)
+	}
+	return buildQuestions(rawQuestions)
+}
+
+// LoadQuestions is ParseQuestions reading from an io.Reader.
+func LoadQuestions(r io.Reader) (map[string]Question, error) {
+	raw, err := io.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("%w: reading questions: %w", ErrInvalidRequest, err)
+	}
+	return ParseQuestions(raw)
+}
+
+// buildQuestions validates an already-decoded set, reporting the first problem
+// against the name of the offending question.
+func buildQuestions(rawQuestions map[string]json.RawMessage) (map[string]Question, error) {
+	if len(rawQuestions) < MinQuestions || len(rawQuestions) > MaxQuestions {
+		return nil, fmt.Errorf("%w: questions must contain %d to %d fields, got %d",
+			ErrInvalidRequest, MinQuestions, MaxQuestions, len(rawQuestions))
+	}
+
+	questions := make(map[string]Question, len(rawQuestions))
+	// Sorted so a malformed set always fails on the same question, which
+	// keeps the error reproducible.
+	names := make([]string, 0, len(rawQuestions))
+	for name := range rawQuestions {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	for _, name := range names {
+		question, err := ParseQuestion(rawQuestions[name])
+		if err != nil {
+			return nil, fmt.Errorf("question %q: %w", name, err)
+		}
+		questions[name] = question
+	}
+	return questions, nil
+}
+
+// DecideYesNo evaluates a single yes/no question against the state and returns
+// its answer. It is the common case, so it is wrapped rather than left as a
+// hand-built Questions map.
+func (c *Client) DecideYesNo(ctx context.Context, model string, state State, question Question) (Answer, error) {
+	if question.Type != QuestionNoul {
+		return Answer{}, fmt.Errorf("%w: DecideYesNo needs a %s question, got %q",
+			ErrInvalidRequest, QuestionNoul, question.Type)
+	}
+
+	resp, err := c.Decide(ctx, DecideRequest{
+		Model:     model,
+		State:     state,
+		Questions: map[string]Question{"q": question},
+	})
+	if err != nil {
+		return Answer{}, err
+	}
+	return resp.Answers["q"], nil
 }
 
 // decodeCriteria decodes a question's criteria into out, tolerating an absent

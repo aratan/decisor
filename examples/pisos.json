@@ -1,0 +1,32 @@
+{
+  "operacion": {
+    "type": "choice",
+    "instructions": "¿El anuncio ofrece una venta o un alquiler?",
+    "criteria": {
+      "venta": "El inmueble se vende.",
+      "alquiler": "El inmueble se alquila.",
+      "otro": "No se indica si es venta o alquiler."
+    }
+  },
+  "es_obra_nueva": {
+    "type": "noul",
+    "instructions": "¿El inmueble es de obra nueva o está listo para entrar a vivir?"
+  },
+  "distribucion": {
+    "type": "score",
+    "instructions": "¿Qué tan completa es la distribución que indica el anuncio?",
+    "criteria": [
+      "No indica el número de habitaciones.",
+      "Indica habitaciones pero no baños.",
+      "Indica habitaciones y baños."
+    ]
+  },
+  "zona_descriptiva": {
+    "type": "noul",
+    "instructions": "Además del nombre del barrio o la ciudad, ¿el anuncio describe la zona y sus servicios?"
+  },
+  "precio_inflado": {
+    "type": "noul",
+    "instructions": "Según el texto, ¿el precio parece alto para el estado y la zona que describe?"
+  }
+}

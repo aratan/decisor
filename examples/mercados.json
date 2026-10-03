@@ -1,0 +1,33 @@
+{
+  "tono_del_titular": {
+    "type": "choice",
+    "instructions": "¿El titular sugiere que la situación de la empresa mejorará, empeorará o no cambia?",
+    "criteria": {
+      "mejora": "El titular anuncia resultados buenos, un acuerdo, una subida o una expansión.",
+      "empeora": "El titular anuncia pérdidas, un cierre, una bajada, un despido o un problema.",
+      "neutro": "El titular informa de un hecho sin cargar en ninguna dirección.",
+      "otro": "El titular no encaja en ninguna de las categorías anteriores."
+    }
+  },
+  "menciona_dinero": {
+    "type": "noul",
+    "instructions": "¿El titular menciona cifras, porcentajes o un impacto económico?",
+    "criteria": {
+      "true": "El titular incluye una cifra, un porcentaje o una cantidad.",
+      "false": "El titular no incluye ninguna cifra."
+    }
+  },
+  "alcance": {
+    "type": "score",
+    "instructions": "¿Qué tan amplio parece ser el efecto que describe el titular?",
+    "criteria": [
+      "Afecta solo a una operación puntual.",
+      "Afecta a una sección de la empresa.",
+      "Afecta a la empresa entera o al sector."
+    ]
+  },
+  "es_promocion": {
+    "type": "noul",
+    "instructions": "¿El titular parece material de promoción más que información periodística?"
+  }
+}

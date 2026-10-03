@@ -1,0 +1,35 @@
+{
+  "estado_general": {
+    "type": "noul",
+    "instructions": "¿El anuncio describe un coche en buen estado?",
+    "criteria": {
+      "true": "Destaca historial de mantenimiento, revisiones al día, único propietario y poco kilometraje.",
+      "false": "El anuncio menciona averías, necesitar revisión, muchos dueños o kilometraje alto."
+    }
+  },
+  "tipo_anuncio": {
+    "type": "choice",
+    "instructions": "¿Qué tipo de vendedor parece ser?",
+    "criteria": {
+      "particular": "Un particular: un solo coche, lenguaje informal, fotos hechas en casa.",
+      "concesionario": "Un concesionario: varios coches en stock, líneas de modelo, financiación.",
+      "intermediario": "Alguien que no aclara quién es el propietario o compra y revende.",
+      "otro": "No encaja en ninguno de los anteriores."
+    }
+  },
+  "precio_alto": {
+    "type": "noul",
+    "instructions": "Según el anuncio, ¿el precio parece alto para lo que ofrece el coche?"
+  },
+  "senal_de_riesgo": {
+    "type": "choice",
+    "instructions": "¿Qué señal de cautela o de riesgo aparece en el texto?",
+    "criteria": {
+      "ninguna": "No hay ninguna señal de cautela en el texto.",
+      "urgencia": "Insiste en la urgencia: solo esta semana, precio válido hoy.",
+      "verlo_antes": "Pide ver el coche antes de comprar o pagar nada.",
+      "documentacion": "Falta documentación: sin historial de servicio o transferencia pendiente.",
+      "varias": "Aparecen varias señales a la vez."
+    }
+  }
+}
