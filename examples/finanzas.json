@@ -1,0 +1,69 @@
+{
+  "calidad_del_dato": {
+    "type": "noul",
+    "instructions": "El estado es un único registro del endpoint /coins/markets de CoinGecko: los campos de una sola criptomoneda, current_price, market_cap, total_volume, high_24h, low_24h, circulating_supply, ath, ath_change_percentage y los demás. No es el array entero, es una fila. Antes de sacar ninguna conclusión sobre el precio, comprueba si los números de esa fila son fiables. Es el filtro previo: si los datos están planos o vacíos, las respuestas a las demás preguntas no significan nada.",
+    "criteria": {
+      "true": "La fila no sirve para decidir: total_volume es cero, o high_24h y low_24h son idénticos, o price_change_24h es cero exacto, o el precio apenas ha variado en 24 horas.",
+      "false": "La fila tiene volumen, recorrido en el rango de 24 horas y datos de suministro rellenos."
+    }
+  },
+  "direccion_del_dia": {
+    "type": "noul",
+    "instructions": "El estado es un único registro del endpoint /coins/markets de CoinGecko: los campos de una sola criptomoneda, current_price, market_cap, total_volume, high_24h, low_24h, circulating_supply, ath, ath_change_percentage y los demás. No es el array entero, es una fila. Mira el signo del campo price_change_percentage_24h: si lleva el signo menos, el precio ha bajado en las últimas 24 horas; si no lo lleva, ha subido. ¿En qué dirección ha ido el precio hoy?",
+    "criteria": {
+      "true": "price_change_percentage_24h es negativo: el precio ha bajado hoy.",
+      "false": "price_change_percentage_24h es positivo: el precio ha subido hoy."
+    }
+  },
+  "distancia_al_minimo": {
+    "type": "choice",
+    "instructions": "El estado es un único registro del endpoint /coins/markets de CoinGecko. Mira current_price y low_24h. Si los dos números están casi igual, es que el precio ya está en el suelo del día y no le queda apenas recorrido a la baja. Si low_24h está claramente por debajo de current_price, todavía hay recorrido a la baja antes de llegar al mínimo de hoy.",
+    "criteria": {
+      "pegado_al_minimo": "current_price y low_24h están casi igual, o current_price solo es un poco mayor que low_24h. El precio ya está en el suelo del día.",
+      "holgado_sobre_el_minimo": "current_price está claramente por encima de low_24h: hay bastante recorrido entre el precio de ahora y el mínimo de hoy."
+    }
+  },
+  "distancia_al_maximo": {
+    "type": "choice",
+    "instructions": "El estado es un único registro del endpoint /coins/markets de CoinGecko. Mira current_price y high_24h. Si los dos números están casi igual, es que el precio ya está en el techo del día, que es lo que pasa cuando ha subido con fuerza. Si high_24h está claramente por encima de current_price, al precio todavía le queda recorrido al alza dentro del día.",
+    "criteria": {
+      "pegado_al_maximo": "current_price y high_24h están casi igual, o current_price solo es un poco menor que high_24h. El precio ya está en el techo del día.",
+      "holgado_bajo_el_maximo": "high_24h está claramente por encima de current_price: al precio le queda recorrido al alza dentro del día."
+    }
+  },
+  "retroceso_desde_maximo": {
+    "type": "score",
+    "instructions": "El estado es un único registro del endpoint /coins/markets de CoinGecko: los campos de una sola criptomoneda, current_price, market_cap, total_volume, high_24h, low_24h, circulating_supply, ath, ath_change_percentage y los demás. No es el array entero, es una fila. Busca el campo ath_change_percentage y compara su valor con los tres tramos de abajo, en ese orden: primero por debajo de -60, después entre -60 y -20, y por último entre -20 y cero. Elige el tramo dentro del que cae el número tal cual está escrito en el registro. (ath y ath_date indican cuál es ese máximo histórico.)",
+    "criteria": [
+      "ath_change_percentage por debajo de -60: el precio está muy lejos de su máximo histórico. Ejemplos: -78, -86, -95.",
+      "ath_change_percentage entre -60 y -20: el precio ha retrocedido de forma apreciable pero sigue cerca de su máximo. Ejemplos: -30, -42, -55.",
+      "ath_change_percentage entre -20 y cero: el precio está pegado a su máximo histórico, sin recorrido a la baja desde el techo. Ejemplos: -8, -3, -1."
+    ]
+  },
+  "anclaje_de_entrada": {
+    "type": "choice",
+    "instructions": "El estado es un único registro del endpoint /coins/markets de CoinGecko: los campos de una sola criptomoneda, current_price, market_cap, total_volume, high_24h, low_24h, circulating_supply, ath, ath_change_percentage y los demás. No es el array entero, es una fila. Una orden de compra limitada se ancla en un precio concreto, no en el precio actual. Fíjate en current_price dentro del intervalo que va de low_24h a high_24h: ese intervalo es el rango que el mercado ha pagado hoy, y da los tres precios de referencia razonables.",
+    "criteria": {
+      "en_el_minimo_del_dia": "Anclar en low_24h o cerca: el precio bajo a buscar, el extremo inferior del rango que el mercado ya ha pagado hoy. Es el que más margen deja si la orden llega a ejecutarse.",
+      "en_el_precio_actual": "Anclar en current_price: entrar ya al precio de mercado, sin esperar un retroceso que puede no llegar.",
+      "cerca_del_maximo_del_dia": "Anclar en high_24h o cerca: pagar el extremo superior del rango de 24 horas. Es una apuesta por continuidad del impulso, con poco margen de error si el precio retrocede.",
+      "ninguno_sirve": "Ninguno de los tres niveles sirve con estos números, porque el rango de 24 horas es demasiado plano o los datos no son fiables."
+    }
+  },
+  "presion_de_emision": {
+    "type": "noul",
+    "instructions": "El estado es un único registro del endpoint /coins/markets de CoinGecko: los campos de una sola criptomoneda, current_price, market_cap, total_volume, high_24h, low_24h, circulating_supply, ath, ath_change_percentage y los demás. No es el array entero, es una fila. Compara market_cap con fully_diluted_valuation, y mira circulating_supply, total_supply y max_supply. Una capitalización muy por debajo de la valoración totalmente diluida significa que hay oferta futura que todavía no ha entrado y que puede venderse por encima de lo que ya existe.",
+    "criteria": {
+      "true": "fully_diluted_valuation es claramente mayor que market_cap, o total_supply queda muy por encima de circulating_supply. Queda oferta por emitir, y eso es techo sobre el precio.",
+      "false": "fully_diluted_valuation y market_cap coinciden o casi, y la oferta circulante está cerca del máximo. Ya no queda oferta por emitir."
+    }
+  },
+  "liquidez_de_salida": {
+    "type": "noul",
+    "instructions": "El estado es un único registro del endpoint /coins/markets de CoinGecko: los campos de una sola criptomoneda, current_price, market_cap, total_volume, high_24h, low_24h, circulating_supply, ath, ath_change_percentage y los demás. No es el array entero, es una fila. Compara total_volume con market_cap. Si el volumen de 24 horas es una fracción mínuscula de la capitalización, es imposible entrar y salir sin mover el precio y una posición se queda atrapada. Es el riesgo que más duele cuando el resto de los números se ven bien.",
+    "criteria": {
+      "true": "total_volume es cero o es una proporción muy pequeña de market_cap. La salida sería costosa o imposible en un movimiento de tamaño normal.",
+      "false": "total_volume es una proporción apreciable de market_cap. Hay liquidez suficiente para entrar y salir."
+    }
+  }
+}
