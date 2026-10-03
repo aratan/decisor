@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.svg" alt="decisor" width="104">
+  <img src="assets/logo-horizontal.svg" alt="decisor" width="104">
 </p>
 
 # decisor
