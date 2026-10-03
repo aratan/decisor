@@ -6,7 +6,8 @@
 
 <p align="center">
   <em>Hazle preguntas a un modelo y obtén <strong>probabilidades</strong>, no prosa.<br>
-  Cliente Go del endpoint de decisiones de Ollama, <code>/v1/systemone</code>.</em>
+  Cliente Go del endpoint de decisiones de Ollama, <code>/v1/systemone</code>.<br>
+  <strong>Todo en local: sin cuenta, sin clave de API y sin coste por token.</strong></em>
 </p>
 
 <p align="center">
@@ -41,6 +42,7 @@ califican **de forma independiente**, sin razonar entre ellas.
 ## Índice
 
 - [Por qué](#por-qué)
+- [Coste](#coste)
 - [Requisitos](#requisitos)
 - [Instalación](#instalación)
 - [Uso rápido](#uso-rápido)
@@ -63,10 +65,36 @@ califican **de forma independiente**, sin razonar entre ellas.
   preguntar más sale casi gratis ([medido](#rendimiento)).
 - **Validación local.** Las preguntas se comprueban antes de salir a la red; los
   errores de esquema son un `ErrInvalidRequest`, no un HTTP 400.
+- **Coste cero por token.** Sin cuota, sin factura y sin depender de un proveedor externo.
 - **Cero dependencias.** Solo la biblioteca estándar de Go.
 
 El alcance es deliberadamente estrecho: solo `POST /v1/systemone`. No hay cliente
 de chat, porque no es lo que este tipo de modelo hace bien.
+
+## Coste
+
+**Cero.** `decisor` habla con Ollama en `localhost:11434` y, por defecto, no sale
+a internet. No hay cuenta que abrir, ni clave de API, ni factura por token:
+
+- **Sin coste por token.** El modelo se carga en tu máquina y se reutiliza
+  entre llamadas.
+- **Sin cuotas.** No hay tope de llamadas ni peticiones por minuto.
+- **Los datos no se van.** El texto que evalúas no sale del equipo, lo cual suele
+  ser lo que bloquea estos usos en entornos con datos sensibles.
+
+Esto es justo lo que lo diferencia de un modelo de pago: aquí decides tú
+cuántas preguntas se hacen, y puedes hacerlas muchas.
+
+Lo único que pagas es el hardware. Si ya tienes un equipo, el coste es cero; si
+alquilas una GPU en vez de usar tu propio ordenador, claramente deja de serlo.
+"Cero coste" presupone hardware propio. Lo único que hace falta es que quepa el
+modelo: Nimble en Q8\_0 pesa 9,5 GB, así que conviene un equipo con unos 10 GB
+de RAM disponibles, o cuantizarlo a menos.
+
+Las licencias tampoco ponen restricciones: `decisor` es [MIT](LICENSE) y
+[Nimble](https://huggingface.co/Bespoke-Nimble-9B) es Apache 2.0 de
+[Bespoke Labs](https://www.bespokelabs.ai), así que ambos se pueden usar en
+proyectos comerciales sin pedir permiso.
 
 ## Requisitos
 
