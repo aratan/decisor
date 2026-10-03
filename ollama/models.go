@@ -13,7 +13,7 @@ type Model struct {
 }
 
 // ListModels returns the models the server advertises. Use the returned ID as
-// the Model field of a DecideRequest or ChatRequest.
+// the Model field of a DecideRequest.
 func (c *Client) ListModels(ctx context.Context) ([]Model, error) {
 	var payload struct {
 		Data []Model `json:"data"`

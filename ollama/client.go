@@ -1,17 +1,11 @@
-// Package ollama is a dependency-free client for the HTTP APIs exposed by an
+// Package ollama is a dependency-free client for the decision endpoint of an
 // Ollama server.
 //
-// It covers two endpoints:
-//
-//   - POST /v1/systemone, a decision endpoint that evaluates a piece of text
-//     (the "state") against a set of typed questions and returns probabilities
-//     rather than prose.
-//   - POST /v1/chat/completions, the OpenAI-compatible chat API, which also
-//     works against remote providers that speak the same dialect.
-//
-// The decision endpoint is specific to Ollama builds that advertise the
-// "decision" model capability. Point the client at the server with
-// WithBaseURL; the default is http://localhost:11434.
+// It covers POST /v1/systemone, which evaluates a piece of text (the "state")
+// against a set of typed questions and returns probabilities rather than prose.
+// That endpoint is specific to Ollama builds that advertise the "decision"
+// model capability. Point the client at the server with WithBaseURL; the
+// default is http://localhost:11434.
 package ollama
 
 import (
@@ -85,8 +79,8 @@ func WithHeader(key, value string) Option {
 	}
 }
 
-// WithAPIKey sends an "Authorization: Bearer <key>" header, which is how
-// remote OpenAI-compatible gateways authenticate.
+// WithAPIKey sends an "Authorization: Bearer <key>" header, which is how a
+// remote gateway in front of Ollama authenticates.
 func WithAPIKey(key string) Option {
 	return WithHeader("Authorization", "Bearer "+strings.TrimSpace(key))
 }
@@ -160,26 +154,6 @@ func (c *Client) do(ctx context.Context, method, path string, body, out any) err
 		return fmt.Errorf("ollama: decoding response from %s: %w", path, err)
 	}
 	return nil
-}
-
-// openStream performs a request and hands back the still-open response body,
-// for endpoints that stream server-sent events.
-func (c *Client) openStream(ctx context.Context, path string, body any) (io.ReadCloser, error) {
-	req, err := c.newRequest(ctx, http.MethodPost, path, body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Accept", "text/event-stream")
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return nil, c.wrapTransportError(path, err)
-	}
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		defer resp.Body.Close()
-		return nil, apiErrorFrom(path, resp)
-	}
-	return resp.Body, nil
 }
 
 func (c *Client) getJSON(ctx context.Context, path string, out any) error {

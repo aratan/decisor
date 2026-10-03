@@ -65,6 +65,9 @@ califican **de forma independiente**, sin razonar entre ellas.
   errores de esquema son un `ErrInvalidRequest`, no un HTTP 400.
 - **Cero dependencias.** Solo la biblioteca estándar de Go.
 
+El alcance es deliberadamente estrecho: solo `POST /v1/systemone`. No hay cliente
+de chat, porque no es lo que este tipo de modelo hace bien.
+
 ## Requisitos
 
 - Go 1.24 o superior (para compilar).
@@ -304,20 +307,6 @@ for name, raw := range fromConfig {
 | `ollama.IsTooLarge(err)` | La petición pasaba de 64 KiB. |
 | `ollama.IsNotFound(err)` | El modelo no existe. |
 | `ollama.IsUnavailable(err)` | No se pudo conectar con el servidor. |
-
-### Endpoint compatible con OpenAI
-
-El cliente también habla con `/v1/chat/completions`, por si quieres apuntarlo a
-un proveedor remoto. **No es lo que Nimble hace bien**: como modelo de decisión
-responde con códigos de una letra (`"C"`, `"A"`). Úsalo con modelos de chat.
-
-```go
-resp, err := client.Chat(ctx, ollama.ChatRequest{
-    Model:    "otro-modelo",
-    Messages: []ollama.Message{ollama.Text("Explícame Go en dos frases")},
-})
-fmt.Println(resp.Text(), resp.Duration)
-```
 
 ## Límites del servidor
 

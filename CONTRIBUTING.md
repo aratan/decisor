@@ -59,9 +59,9 @@ antes de llegar a GitHub.
 
   Se pueden ajustar con `SYSTEMONE_URL` y `SYSTEMONE_MODEL`.
 
-Si cambias el comportamiento de `Decide` o de `Chat`, añade el test que lo
-cubre. Si el cambio depende de cómo se comporta el servidor, idealmente con un
-test de integración.
+Si cambias el comportamiento de `Decide`, añade el test que lo cubre. Si el
+cambio depende de cómo se comporta el servidor, idealmente con un test de
+integración.
 
 ## Reportar un fallo
 
