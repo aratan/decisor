@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decisor · Demo de batalla naval</title>
+<style>
+  /* Paleta y medidas: la celda mide 56px, de modo que el tablero 5x5 ocupa
+     280px más el marco y encaja sin desbordes a zoom del 100%. */
+  :root {
+    --tinta: #1f2937;
+    --suave: #6b7280;
+    --fondo: #f3f4f6;
+    --panel: #ffffff;
+    --acento: #2563eb;
+    --acento-oscuro: #1d4ed8;
+    --acento-claro: #dbeafe;
+    --alerta: #b91c1c;
+    --alerta-fondo: #fef2f2;
+    --exito: #047857;
+    --exito-fondo: #ecfdf5;
+    --celda: 56px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 24px 20px 48px;
+    background: var(--fondo);
+    color: var(--tinta);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+
+  main, header, .config, .controles { max-width: 960px; margin-inline: auto; }
+
+  h1 { margin: 0 0 4px; font-size: 1.6rem; }
+  h2 { margin: 0 0 8px; font-size: 1rem; text-transform: uppercase; letter-spacing: .04em; color: var(--suave); }
+
+  .entradilla { margin: 0 0 20px; color: var(--suave); max-width: 62ch; }
+
+  fieldset {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: var(--panel);
+    padding: 12px 14px;
+    margin: 0 0 14px;
+  }
+
+  legend { font-weight: 600; font-size: .85rem; color: var(--suave); padding-inline: 6px; }
+
+  .campos { display: flex; flex-wrap: wrap; gap: 14px; }
+
+  .campo { display: flex; flex-direction: column; gap: 4px; min-width: 220px; flex: 1; }
+  .campo label { font-size: .85rem; font-weight: 600; }
+
+  input[type="url"], input[type="text"], select {
+    font: inherit;
+    padding: 7px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+    color: var(--tinta);
+  }
+
+  button {
+    font: inherit;
+    font-weight: 600;
+    padding: 8px 16px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: var(--acento);
+    color: #fff;
+    cursor: pointer;
+  }
+  button:hover { background: var(--acento-oscuro); }
+  button[disabled] { background: #9ca3af; cursor: not-allowed; }
+  button.secundario { background: #fff; color: var(--tinta); border-color: #d1d5db; }
+  button.secundario:hover { background: #f9fafb; }
+  button[aria-pressed="true"] { background: var(--acento-oscuro); border-color: var(--acento-oscuro); }
+
+  :focus-visible { outline: 3px solid var(--acento); outline-offset: 2px; }
+
+  .controles {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+    background: var(--panel);
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+  }
+  .controles .campo { min-width: 130px; flex: 0 0 auto; }
+
+  /* Caja de error: el título y el detalle los rellena el JS; la lista de
+     solución es texto fijo del HTML. */
+  .error {
+    max-width: 960px;
+    margin: 0 auto 14px;
+    padding: 12px 16px;
+    border: 1px solid var(--alerta);
+    border-left-width: 5px;
+    border-radius: 10px;
+    background: var(--alerta-fondo);
+    color: var(--alerta);
+  }
+  .error[hidden] { display: none; }
+  .error strong { display: block; margin-bottom: 6px; }
+  .error ul { margin: 0; padding-left: 20px; }
+  .error li { margin-bottom: 3px; }
+  .error code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .85em;
+    background: #fff;
+    border: 1px solid #fecaca;
+    border-radius: 4px;
+    padding: 1px 5px;
+    overflow-wrap: anywhere;
+  }
+  .error-detalle { margin: 8px 0 0; font-size: .9rem; overflow-wrap: anywhere; color: var(--tinta); }
+  .error-detalle:empty { display: none; }
+
+  .banner {
+    max-width: 960px;
+    margin: 0 auto 14px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-weight: 700;
+    background: var(--exito-fondo);
+    border: 1px solid var(--exito);
+    color: var(--exito);
+  }
+  .banner[hidden] { display: none; }
+  .banner.limitado { background: #fffbeb; border-color: #b45309; color: #92400e; }
+
+  .escena {
+    max-width: 960px;
+    margin-inline: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px;
+    align-items: flex-start;
+  }
+
+  /* --- Tablero: rejilla CSS, sin canvas ni imágenes --- */
+  .tablero {
+    display: grid;
+    grid-template-columns: repeat(5, var(--celda));
+    grid-template-rows: repeat(5, var(--celda));
+    background: #fff;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    flex: 0 0 auto;
+  }
+
+  .celda {
+    width: var(--celda);
+    height: var(--celda);
+    padding: 0;
+    margin: 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 0;
+    background: #fff;
+    color: var(--tinta);
+    font: 700 20px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color .25s;
+  }
+  .celda:hover:not([disabled]) { outline: 2px solid var(--acento); outline-offset: -2px; }
+  .celda[disabled] { background: inherit; color: inherit; cursor: default; opacity: 1; }
+
+  .celda.impacto { background: var(--exito-fondo); color: var(--exito); }
+  .celda.fallo { background: #f9fafb; color: var(--suave); }
+  /* Casilla elegida en el último turno del modelo. */
+  .celda.elegida { outline: 3px dashed var(--acento-oscuro); outline-offset: -3px; z-index: 1; }
+  /* El barco solo se revela cuando la partida termina. */
+  .celda.barco { background: #fee2e2; border-color: #fca5a5; color: var(--alerta); }
+  .celda.hundido { animation: hundido .5s ease-out 2; }
+  @keyframes hundido {
+    from { background: #fecaca; }
+    to   { background: #fee2e2; }
+  }
+
+  .pie { max-width: 380px; flex: 1 1 320px; min-width: 280px; }
+
+  /* --- Barra de probabilidad (solo celdas libres) --- */
+  .prob {
+    display: grid;
+    grid-template-columns: 58px 1fr 64px;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 6px;
+    border-radius: 8px;
+    margin-bottom: 3px;
+  }
+  .prob.elegida { background: var(--acento-claro); }
+  .prob.elegida .prob-nombre::before { content: "► "; color: var(--acento-oscuro); }
+  .prob-nombre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9rem; }
+  .prob.elegida .prob-nombre { font-weight: 700; }
+  .prob-barra { display: block; height: 12px; border-radius: 6px; background: #e5e7eb; overflow: hidden; }
+  .prob-relleno {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--acento);
+    border-radius: 6px;
+    transition: width .3s ease-out;
+  }
+  .prob.elegida .prob-relleno { background: var(--acento-oscuro); }
+  .prob-valor { text-align: right; font-variant-numeric: tabular-nums; font-size: .9rem; }
+
+  .contador, .estado { margin: 8px 0 0; font-size: .9rem; color: var(--suave); }
+  .contador { font-weight: 600; color: var(--tinta); font-variant-numeric: tabular-nums; }
+  .estado { font-variant-numeric: tabular-nums; }
+
+  .registro {
+    margin: 0;
+    padding-left: 22px;
+    max-height: 220px;
+    overflow-y: auto;
+    font-size: .88rem;
+    color: var(--tinta);
+  }
+  .registro li { margin-bottom: 2px; }
+  .registro .impacto { color: var(--exito); font-weight: 600; }
+  .registro .fallo { color: var(--suave); }
+  .registro .vacio { color: var(--suave); font-style: italic; list-style: none; margin-left: -22px; }
+
+  .pista { max-width: 960px; margin: 18px auto 0; font-size: .85rem; color: var(--suave); }
+  .pista code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: #e5e7eb;
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+
+  @media (max-width: 640px) {
+    .escena { gap: 18px; }
+    .pie { min-width: 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>El modelo decide: batalla naval</h1>
+  <p class="entradilla">
+    En un tablero de 5×5 hay un barco de 3 casillas oculto. Cada turno el
+    modelo de Ollama recibe el estado y devuelve la probabilidad de acertar en
+    cada casilla libre; tú ves el mapa de calor y la casilla elegida. Nadie
+    escribe el disparo.
+  </p>
+</header>
+
+<fieldset>
+  <legend>Conexión</legend>
+  <div class="campos">
+    <div class="campo">
+      <label for="url">URL del servidor</label>
+      <input id="url" type="url" value="http://localhost:11434" spellcheck="false" autocomplete="off">
+    </div>
+    <div class="campo">
+      <label for="modelo">Modelo</label>
+      <input id="modelo" type="text" value="nimble" spellcheck="false" autocomplete="off">
+    </div>
+  </div>
+</fieldset>
+
+<div id="error" class="error" role="alert" hidden>
+  <strong class="error-titulo"></strong>
+  <ul>
+    <li>¿Está Ollama en marcha? Arráncalo con <code>ollama serve</code>.</li>
+    <li>¿Tienes el modelo instalado? <code>ollama pull nimble</code> (solo
+      modelos Nimble o Tev aceptan <code>/v1/systemone</code>).</li>
+    <li>¿Falta CORS? El navegador exige permiso de origen: reinicia Ollama con
+      <code>OLLAMA_ORIGINS=* ollama serve</code> (o limita el origen, p. ej.
+      <code>OLLAMA_ORIGINS=http://localhost:8000</code>).</li>
+    <li>Sirve la demo desde localhost: <code>python3 -m http.server</code>
+      dentro de <code>demo/</code> y abre
+      <code>http://localhost:8000/batalla.html</code>. Desde
+      <code>file://</code> el origen <code>null</code> suele ser rechazado.</li>
+  </ul>
+  <p class="error-detalle"></p>
+</div>
+
+<div id="banner" class="banner" role="status" hidden></div>
+
+<div class="controles">
+  <button id="disparar" type="button">Dispara el modelo</button>
+  <button id="manual" type="button" class="secundario" aria-pressed="false">Yo disparo</button>
+  <button id="nueva" type="button" class="secundario">Nueva partida</button>
+  <div class="campo">
+    <label for="velocidad">Velocidad</label>
+    <select id="velocidad">
+      <option value="1600">lento</option>
+      <option value="700" selected>normal</option>
+      <option value="150">rápido</option>
+    </select>
+  </div>
+</div>
+
+<main class="escena">
+  <div id="tablero" class="tablero" role="group"
+       aria-label="Tablero de batalla naval de cinco por cinco casillas"></div>
+
+  <section class="pie" aria-label="Probabilidades y registro">
+    <h2>Probabilidades</h2>
+    <div id="probabilidades"></div>
+    <p id="contador" class="contador">Disparos: 0 · Impactos: 0/3</p>
+    <p id="estado" class="estado" aria-live="polite">Pulsa «Dispara el modelo» para empezar.</p>
+
+    <h2 style="margin-top:18px">Registro</h2>
+    <ol id="registro" class="registro">
+      <li class="vacio">Sin disparos todavía.</li>
+    </ol>
+  </section>
+</main>
+
+<p class="pista">
+  El estado que recibe el modelo es un JSON pequeño
+  (<code>{mapa, impactos, disparos}</code>) con la rejilla en ASCII (X=impacto,
+  .=fallo, ?=sin disparar); la pregunta se llama <code>casilla</code> y es de
+  tipo <code>choice</code> con una criteria por casilla libre. La página debe
+  servirse desde localhost (<code>python3 -m http.server</code> en
+  <code>demo/</code>) porque el navegador llama directamente a
+  <code>POST /v1/systemone</code> de Ollama y necesita CORS.
+</p>
+
+<script src="batalla.js" defer></script>
+</body>
+</html>
