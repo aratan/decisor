@@ -280,9 +280,9 @@
     <li>¿Falta CORS? El navegador exige permiso de origen: reinicia Ollama con
       <code>OLLAMA_ORIGINS=* ollama serve</code> (o limita el origen, p. ej.
       <code>OLLAMA_ORIGINS=http://localhost:8000</code>).</li>
-    <li>Sirve la demo desde localhost: <code>python3 -m http.server</code>
-      dentro de <code>demo/</code> y abre
-      <code>http://localhost:8000/batalla.html</code>. Desde
+    <li>Sirve la demo desde localhost: <code>./demo/run.sh</code> desde la raíz
+      del repo (o <code>python3 -m http.server</code> y abre
+      <code>http://localhost:8000/demo/batalla.html</code>). Desde
       <code>file://</code> el origen <code>null</code> suele ser rechazado.</li>
   </ul>
   <p class="error-detalle"></p>
@@ -326,8 +326,9 @@
   (<code>{mapa, impactos, disparos}</code>) con la rejilla en ASCII (X=impacto,
   .=fallo, ?=sin disparar); la pregunta se llama <code>casilla</code> y es de
   tipo <code>choice</code> con una criteria por casilla libre. La página debe
-  servirse desde localhost (<code>python3 -m http.server</code> en
-  <code>demo/</code>) porque el navegador llama directamente a
+  servirse desde localhost (<code>./demo/run.sh</code>, o
+  <code>python3 -m http.server</code> en la raíz del repo) porque el navegador
+  llama directamente a
   <code>POST /v1/systemone</code> de Ollama y necesita CORS.
 </p>
 

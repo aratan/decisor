@@ -7,6 +7,10 @@ no prosa.
 
 ## Cómo ejecutarla
 
+Atajo: `./demo/run.sh` hace los cuatro pasos por ti (comprueba Ollama y el
+modelo, levanta el servidor estático con el origen CORS correcto y abre el
+navegador en la página). Los pasos manuales son estos:
+
 1. Arranca Ollama con un modelo Nimble o Tev (los únicos que acepta
    `/v1/systemone`):
 
