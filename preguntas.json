@@ -1,3 +1,4 @@
+
 {
   "says_greeting": {
     "type": "noul",
@@ -20,9 +21,9 @@
       "other": "neutro"
     }
   },
-  "politeness": {
+  "probabilidades": {
     "type": "score",
-    "instructions": "¿esta dispuesto?",
-    "criteria": ["si", "no", "puede","duda"]
+    "instructions": "¿Está dispuesto?",
+    "criteria": ["sí", "no", "tal vez", "duda"]
   }
 }
